@@ -20,19 +20,20 @@
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 void fixPitch();
-void fixYaw();
+
+void useShader(Shader shader, glm::mat4 projection, glm::mat4 view);
 
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 bool firstMouse = true;
-float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float yaw = -90.0f;	
 float pitch = 0.0f;
+
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
-float fov = 45.0f;
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -40,7 +41,6 @@ float lastFrame = 0.0f;
 
 int main()
 {
-    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++ INICIJALIZACIJA ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     if (!glfwInit())
     {
@@ -78,31 +78,50 @@ int main()
         return 3;
     }
 
+    // Objects
 
-    Model lija("res/low-poly-fox.obj");
-    //Tjemena i baferi su definisani u model klasi i naprave se pri stvaranju objekata
+    // Ocean
+    Model ocean("res/Ocean/Ocean.obj");
+    glm::mat4 oceanModel = glm::mat4(1.0f);
+    oceanModel = glm::scale(oceanModel, glm::vec3(20.0f, 1.0f, 20.0f));
 
-    Shader unifiedShader("basic.vert", "basic.frag");
+    // Island 1
+    Model island1("res/sphere/sphere.obj");
+    glm::mat4 island1Model = glm::mat4(1.0f);
+    island1Model = glm::scale(island1Model, glm::vec3(0.5f, 0.3f, 0.5f));
 
-    // Lighting
-    unifiedShader.use();
-    unifiedShader.setVec3("uLightPos", 0, 1, 3);
-    unifiedShader.setVec3("uViewPos", 0, 0, 5);
-    unifiedShader.setVec3("uLightColor", 1, 1, 1);
+    // Island 2
+    Model island2("res/sphere/sphere.obj");
+    glm::mat4 island2Model = glm::mat4(1.0f);
+    island2Model = glm::scale(island2Model, glm::vec3(0.4f, 0.2f, 0.4f));
+    island2Model = glm::translate(island2Model, glm::vec3(5.0f, 0.0f, 10.0f));
 
-    // Projection
+    // Island 3
+    Model island3("res/sphere/sphere.obj");
+    glm::mat4 island3Model = glm::mat4(1.0f);
+    island3Model = glm::scale(island3Model, glm::vec3(0.3f, 0.2f, 0.3f));
+    island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 8.0f));
+
+    // Shark 1
+    Model shark1("res/shark/SHARK.obj");
+    glm::mat4 shark1Model = glm::mat4(1.0f);
+    shark1Model = glm::scale(shark1Model, glm::vec3(0.1f, 0.1f, 0.1f));
+    shark1Model = glm::translate(shark1Model, glm::vec3(-7.0f, -0.3f, 8.0f));
+
+    // Projection 
+    glm::mat4 currentProjection;
     glm::mat4 projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     glm::mat4 projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
-    unifiedShader.setMat4("projection", projectionOrtho);
+    currentProjection = projectionOrtho;
 
     // View
     glm::mat4 view = glm::lookAt(cameraPos, cameraFront, cameraUp);
-    unifiedShader.setMat4("view", view);
-    glm::vec3 cameraDirection;
 
-    // Model
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::scale(model, glm::vec3(0.5f, 0.5f , 0.5f));
+    // shaders
+    Shader currentShader("ocean.vert", "ocean.frag");
+    Shader oceanShader("ocean.vert", "ocean.frag");
+    Shader islandShader("island.vert", "island.frag");
+    Shader sharkShader("shark.vert", "shark.frag");
 
     // Settings
     glEnable(GL_DEPTH_TEST);
@@ -127,7 +146,7 @@ int main()
             cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
             yaw = -90.0f;
             pitch = 0.0f;
-            unifiedShader.setMat4("projection", projectionPerspective);
+            currentProjection = projectionPerspective;
         }
         if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
         {
@@ -136,18 +155,40 @@ int main()
             cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
             yaw = -90.0f;
             pitch = 0.0f;
-            unifiedShader.setMat4("projection", projectionOrtho);
+            currentProjection = projectionOrtho;
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        view = glm::lookAt(cameraPos, cameraFront, cameraUp);
-        unifiedShader.setMat4("view", view);
-
         /*model = glm::rotate(model, glm::radians(0.1f), glm::vec3(0.0f, 1.0f, 0.0f));*/
-        unifiedShader.setMat4("model", model);
-        lija.Draw(unifiedShader);
 
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+        // ocean
+        useShader(oceanShader, currentProjection, view);
+        currentShader = oceanShader;
+        currentShader.setMat4("model", oceanModel);
+        ocean.Draw(currentShader);
+
+        // islands
+        useShader(islandShader, currentProjection, view);
+        currentShader = islandShader;
+        currentShader.setMat4("model", island1Model);
+        island1.Draw(currentShader);
+
+        currentShader.setMat4("model", island2Model);
+        island2.Draw(currentShader);
+
+        currentShader.setMat4("model", island3Model);
+        island3.Draw(currentShader);
+
+        // sharks
+        useShader(sharkShader, currentProjection, view);
+        currentShader = sharkShader;
+        sharkShader.setMat4("model", shark1Model);
+        shark1.Draw(sharkShader);
+
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -174,7 +215,6 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    float cameraSpeed = static_cast<float>(2.5 * deltaTime);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += glm::vec3(0.0f, 0.01f, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -190,17 +230,16 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
         pitch -= 1.0f;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        yaw -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         yaw += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        yaw -= 1.0f;
     fixPitch();
-    fixYaw();
+    //fixYaw();
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(front);
 }
-
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
@@ -229,7 +268,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     // make sure that when pitch is out of bounds, screen doesn't get flipped
     fixPitch();
-    fixYaw();
 
     glm::vec3 front;
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -246,13 +284,14 @@ void fixPitch()
         pitch = -90.0f;
 }
 
-void fixYaw()
+void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
 {
-    if (yaw >= 90.0f)
-        yaw = 90.0f;
-    if (yaw <= -90.0f)
-        yaw = -90.0f;
+    shader.use();
+    shader.setMat4("projection", projection);
+    shader.setMat4("view", view);
+
+    shader.setVec3("uLightPos", 0, 1, 3);
+    shader.setVec3("uViewPos", 0, 0, 5);
+    shader.setVec3("uLightColor", 1, 1, 1);
 }
-
-
 

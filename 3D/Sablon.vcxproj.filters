@@ -27,10 +27,22 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="basic.frag">
+    <None Include="ocean.frag">
       <Filter>Source Files\Shader Files</Filter>
     </None>
-    <None Include="basic.vert">
+    <None Include="ocean.vert">
+      <Filter>Source Files\Shader Files</Filter>
+    </None>
+    <None Include="island.frag">
+      <Filter>Source Files\Shader Files</Filter>
+    </None>
+    <None Include="island.vert">
+      <Filter>Source Files\Shader Files</Filter>
+    </None>
+    <None Include="shark.frag">
+      <Filter>Source Files\Shader Files</Filter>
+    </None>
+    <None Include="shark.vert">
       <Filter>Source Files\Shader Files</Filter>
     </None>
   </ItemGroup>
