@@ -90,26 +90,18 @@ int main()
 #pragma region Objects
     // Objects
 
-#pragma region Sun and Moon
-    Model sun("res/sphere/sphere.obj");
-    glm::mat4 sunModel = glm::mat4(1.0f);
-    sunModel = glm::translate(sunModel, glm::vec3(0.0f, 7.0f, 10.0f));
-    glm::mat4 sunModelOrtho = glm::scale(sunModel, glm::vec3(aspectRatio, 1.0f, 1.0f));
-    glm::mat4 sunModelPerspective = glm::scale(sunModel, glm::vec3(1.0f, 1.0f, 1.0f));
-    sunModel = sunModelOrtho;
-
-    /*Model moon("res/sphere/sphere.obj");
-    glm::mat4 moonModel = glm::mat4(1.0f);
-    moonModel = glm::translate(moonModel, glm::vec3(0.0f, -7.0f, -0.0f));
-    glm::mat4 moonModelOrtho = glm::scale(moonModel, glm::vec3(aspectRatio, 1.0f, 1.0f));
-    glm::mat4 moonModelPerspective = glm::scale(moonModel, glm::vec3(1.0f, 1.0f, 1.0f));
-    moonModel = moonModelOrtho;*/
-#pragma
-
     // Ocean
     Model ocean("res/Ocean/Ocean.obj");
     glm::mat4 oceanModel = glm::mat4(1.0f);
     oceanModel = glm::scale(oceanModel, glm::vec3(20.0f, 1.0f, 20.0f));
+
+#pragma region Clouds
+    Model cloud1("res/cloud/CloudCollection.obj");
+    glm::mat4 cloud1Model = glm::mat4(1.0f);
+    cloud1Model = glm::scale(cloud1Model, glm::vec3(0.2f, 0.2f, 0.2f));
+    cloud1Model = glm::translate(cloud1Model, glm::vec3(0.0f, 15.0f, 0.0f));
+    cloud1Model = glm::rotate(cloud1Model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+#pragma endregion
 
 #pragma region Islands
     // Island 1
@@ -131,6 +123,21 @@ int main()
     island3Model = glm::scale(island3Model, glm::vec3(0.3f, 0.2f, 0.3f));
     island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 7.0f));
     glm::vec3 island3Centre = glm::vec3(-2.0f, 0.0f, 2.0f);
+#pragma endregion
+
+#pragma region Palm tree
+    Model palmTree("res/palm/OBJ/CoconutPalm.obj");
+    glm::mat4 palmTreeModel = glm::mat4(1.0f);
+    palmTreeModel = glm::scale(palmTreeModel, glm::vec3(0.01f, 0.01f, 0.01f));
+    palmTreeModel = glm::translate(palmTreeModel, glm::vec3(-5.0f, 0.0f, 7.0f));
+    palmTreeModel = glm::rotate(palmTreeModel, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));;
+#pragma endregion
+
+#pragma region Fire
+    Model fire("res/fire/uploads_files_2336673_Fire.obj");
+    glm::mat4 fireModel = glm::mat4(1.0f);
+    fireModel = glm::scale(fireModel, glm::vec3(0.1f, 0.1f, 0.1f));
+    fireModel = glm::translate(fireModel, glm::vec3(1.5f, 0.0f, 0.5f));
 #pragma endregion
 
 #pragma region Sharks
@@ -173,7 +180,7 @@ int main()
 #pragma endregion
 
     // View
-    glm::mat4 view; //= glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    glm::mat4 view;
 
     // shaders
     Shader currentShader("ocean.vert", "ocean.frag");
@@ -195,63 +202,28 @@ int main()
 
         processInput(window);
 
-        // Projection controls
+#pragma region Projection controls
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
         {
             cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
-            //cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
-            //cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
             yaw = 210.0f;
             pitch = -45.0f;
 
-            currentProjection = projectionPerspective;
-            sunModel = sunModelPerspective;
-            //moonModel = sunModelPerspective;            
+            currentProjection = projectionPerspective;     
         }
         if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
         {
             cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
-            /*cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
-            cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
             yaw = 195.0f;
             pitch = -57.0f;
 
             currentProjection = projectionOrtho;
-            sunModel = sunModelOrtho;
-            //moonModel = moonModelOrtho;
         }
+#pragma endregion
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-#pragma region Render sun and Moon
-        useShader(islandShader, currentProjection, view);
-
-        sunModel = rotate(
-            sunModel,
-            glm::radians(0.1f),
-            glm::vec3(1.0f, 0.0f, 0.0f),
-            glm::vec3(sunModel[3]),
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            0.01f
-        );
-        islandShader.setMat4("model", sunModel);
-        sun.Draw(islandShader);
-
-        //useShader(oceanShader, currentProjection, view);
-
-        /*moonModel = rotate(
-            moonModel,
-            glm::radians(0.1f),
-            glm::vec3(1.0f, 0.0f, 0.0f),
-            glm::vec3(moonModel[3]),
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            0.01f
-        );
-        oceanShader.setMat4("model", moonModel);
-        moon.Draw(oceanShader);*/
-#pragma endregion
 
         // ocean
         useShader(oceanShader, currentProjection, view);
@@ -259,8 +231,20 @@ int main()
         currentShader.setMat4("model", oceanModel);
         ocean.Draw(currentShader);
 
+        // fire
+        useShader(oceanShader, currentProjection, view);
+        currentShader = oceanShader;
+        currentShader.setMat4("model", fireModel);
+        fire.Draw(currentShader);
+
+#pragma region Render clouds
+        useShader(oceanShader, currentProjection, view);
+        currentShader = oceanShader;
+        currentShader.setMat4("model", cloud1Model);
+        cloud1.Draw(currentShader);
+#pragma endregion
+
 #pragma region Render island
-        // islands
         useShader(islandShader, currentProjection, view);
         currentShader = islandShader;
         currentShader.setMat4("model", island1Model);
@@ -271,6 +255,13 @@ int main()
 
         currentShader.setMat4("model", island3Model);
         island3.Draw(currentShader);
+#pragma endregion
+
+#pragma region Render palm tree
+        useShader(oceanShader, currentProjection, view);
+        currentShader = oceanShader;
+        currentShader.setMat4("model", palmTreeModel);
+        palmTree.Draw(oceanShader);
 #pragma endregion
 
 #pragma region Render sharks
@@ -335,7 +326,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    float offset = 0.005f;
+    float offset = 0.05f; //0.005f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += glm::vec3(0.0f, offset, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
