@@ -16,7 +16,7 @@ void main()
 
     vec4 darkBlueColor = vec4(0.0, 0.0, 0.2, 1.0);
 
-    float ambientStrength = 0.01;
+    float ambientStrength = 0.1;
     vec3 ambient = ambientStrength * uLightColor;
   	
     // diffuse 
@@ -32,5 +32,5 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * uLightColor;  
 
-    FragColor = darkBlueColor + vec4(ambient + diffuse + specular, 1.0);
+    FragColor = darkBlueColor; //+ vec4(ambient + diffuse + specular, 1.0);
 }

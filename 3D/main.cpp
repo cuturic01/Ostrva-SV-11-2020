@@ -20,6 +20,13 @@
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 void fixPitch();
+glm::mat4 rotate(
+    glm::mat4 model, 
+    float angle, 
+    glm::vec3 axis, 
+    glm::vec3 currentPosition,
+    glm::vec3 rotationPoint,
+    float R);
 
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view);
 
@@ -89,6 +96,7 @@ int main()
     Model island1("res/sphere/sphere.obj");
     glm::mat4 island1Model = glm::mat4(1.0f);
     island1Model = glm::scale(island1Model, glm::vec3(0.5f, 0.3f, 0.5f));
+    glm::vec3 island1Centre = glm::vec3(0.0f, 0.0f, 0.f);
 
     // Island 2
     Model island2("res/sphere/sphere.obj");
@@ -105,8 +113,10 @@ int main()
     // Shark 1
     Model shark1("res/shark/SHARK.obj");
     glm::mat4 shark1Model = glm::mat4(1.0f);
-    shark1Model = glm::scale(shark1Model, glm::vec3(0.1f, 0.1f, 0.1f));
-    shark1Model = glm::translate(shark1Model, glm::vec3(-7.0f, -0.3f, 8.0f));
+    shark1Model = glm::scale(shark1Model, glm::vec3(0.3f, 0.3f, 0.3f));
+    shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.4f, 3.0f));
+    //shark1Model = glm::rotate(shark1Model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::vec3 shark1CurrentPosition = glm::vec3(0.0f, -0.4f, 3.0f);
 
     // Projection 
     glm::mat4 currentProjection;
@@ -160,8 +170,6 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /*model = glm::rotate(model, glm::radians(0.1f), glm::vec3(0.0f, 1.0f, 0.0f));*/
-
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
         // ocean
@@ -185,6 +193,13 @@ int main()
         // sharks
         useShader(sharkShader, currentProjection, view);
         currentShader = sharkShader;
+        shark1Model = rotate(
+            shark1Model, 
+            glm::radians(-0.1f), 
+            glm::vec3(0.0f, 1.0f, 0.0f), 
+            shark1CurrentPosition,
+            island1Centre,
+            0.01f);
         sharkShader.setMat4("model", shark1Model);
         shark1.Draw(sharkShader);
 
@@ -215,24 +230,26 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+    float offset = 0.005f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.0f, 0.01f, 0.0f);
+        cameraPos += glm::vec3(0.0f, offset, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= glm::vec3(0.0f, 0.01f, 0.0f);
+        cameraPos -= glm::vec3(0.0f, offset, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::vec3(0.01f, 0.0f, 0.0f);
+        cameraPos -= glm::vec3(offset, 0.0f, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.01f, 0.0f, 0.0f);
+        cameraPos += glm::vec3(offset, 0.0f, 0.0f);
 
     glm::vec3 front;
+    float angle = 0.1f;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
-        pitch += 1.0f;
+        pitch += angle;
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        pitch -= 1.0f;
+        pitch -= angle;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        yaw += 1.0f;
+        yaw += angle;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        yaw -= 1.0f;
+        yaw -= angle;
     fixPitch();
     //fixYaw();
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -293,5 +310,25 @@ void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
     shader.setVec3("uLightPos", 0, 1, 3);
     shader.setVec3("uViewPos", 0, 0, 5);
     shader.setVec3("uLightColor", 1, 1, 1);
+}
+
+glm::mat4 rotate(
+    glm::mat4 model, 
+    float angle, 
+    glm::vec3 axis, 
+    glm::vec3 currentPosition,
+    glm::vec3 rotationPoint,
+    float R)
+{
+    model = glm::translate(model, -rotationPoint);
+    model = glm::rotate(model, angle, axis);
+    model = glm::translate(model, rotationPoint);
+
+    glm::vec3 newPosition;
+    newPosition.x = rotationPoint.x + R * cos(angle);
+    newPosition.y = rotationPoint.y;
+    newPosition.z = rotationPoint.z + R * sin(angle);
+
+    return glm::translate(model, newPosition);
 }
 
