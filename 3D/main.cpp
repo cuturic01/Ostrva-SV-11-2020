@@ -99,19 +99,21 @@ int main()
     Model island1("res/sphere/sphere.obj");
     glm::mat4 island1Model = glm::mat4(1.0f);
     island1Model = glm::scale(island1Model, glm::vec3(0.5f, 0.3f, 0.5f));
-    glm::vec3 island1Centre = island1.calculateModelCenter(); //glm::vec3(0.0f, 0.0f, 0.f);
+    glm::vec3 island1Centre = glm::vec3(island1Model[3]);
 
     // Island 2
     Model island2("res/sphere/sphere.obj");
     glm::mat4 island2Model = glm::mat4(1.0f);
     island2Model = glm::scale(island2Model, glm::vec3(0.4f, 0.2f, 0.4f));
     island2Model = glm::translate(island2Model, glm::vec3(5.0f, 0.0f, 10.0f));
+    glm::vec3 island2Centre = glm::vec3(0.0f, 0.0f, 3.0f); //glm::vec3(island2Model[3]) / island2Model[0][0];
 
     // Island 3
     Model island3("res/sphere/sphere.obj");
     glm::mat4 island3Model = glm::mat4(1.0f);
     island3Model = glm::scale(island3Model, glm::vec3(0.3f, 0.2f, 0.3f));
-    island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 8.0f));
+    island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 7.0f));
+    glm::vec3 island3Centre = glm::vec3(-2.0f, 0.0f, 2.0f);
 #pragma endregion
 
 #pragma region Sharks
@@ -121,7 +123,24 @@ int main()
     shark1Model = glm::scale(shark1Model, glm::vec3(0.3f, 0.3f, 0.3f));
     shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.4f, 3.0f));
     shark1Model = glm::rotate(shark1Model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 shark1CurrentPosition = shark1.calculateModelCenter();
+    glm::vec3 shark1CurrentPosition = glm::vec3(shark1Model[3]);
+
+    // Shark 2
+    Model shark2("res/shark/SHARK.obj");
+    glm::mat4 shark2Model = glm::mat4(1.0f);
+    shark2Model = glm::scale(shark2Model, glm::vec3(0.3f, 0.3f, 0.3f));
+    shark2Model = glm::translate(shark2Model, glm::vec3(5.0f, -0.5f, 15.0f));
+    shark2Model = glm::rotate(shark2Model, glm::radians(120.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::vec3 shark2CurrentPosition = glm::vec3(shark2Model[3]);
+
+    // Shark 3
+    Model shark3("res/shark/SHARK.obj");
+    glm::mat4 shark3Model = glm::mat4(1.0f);
+    shark3Model = glm::scale(shark3Model, glm::vec3(0.3f, 0.3f, 0.3f));
+    shark3Model = glm::translate(shark3Model, glm::vec3(-9.0f, -0.5f, 10.0f));
+    shark3Model = glm::rotate(shark3Model, glm::radians(140.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::vec3 shark3CurrentPosition = glm::vec3(shark3Model[3]);
+
 #pragma endregion
 
 #pragma endregion
@@ -204,18 +223,38 @@ int main()
 #pragma endregion
 
 #pragma region Render sharks
-        // sharks
         useShader(sharkShader, currentProjection, view);
         currentShader = sharkShader;
+
         shark1Model = rotate(
             shark1Model, 
             glm::radians(0.1f), 
             glm::vec3(0.0f, 1.0f, 0.0f), 
-            shark1CurrentPosition,
+            glm::vec3(shark1Model[3]),
             island1Centre,
             0.01f);
         sharkShader.setMat4("model", shark1Model);
         shark1.Draw(sharkShader);
+
+        shark2Model = rotate(
+            shark2Model,
+            glm::radians(0.1f),
+            glm::vec3(0.0f, 1.0f, 0.0f),
+            shark2CurrentPosition,
+            island2Centre,
+            0.01f);
+        sharkShader.setMat4("model", shark2Model);
+        shark2.Draw(sharkShader);
+
+        shark3Model = rotate(
+            shark3Model,
+            glm::radians(0.1f),
+            glm::vec3(0.0f, 1.0f, 0.0f),
+            shark3CurrentPosition,
+            island3Centre,
+            0.01f);
+        sharkShader.setMat4("model", shark3Model);
+        shark3.Draw(sharkShader);
 #pragma endregion
 
         
@@ -256,7 +295,7 @@ void processInput(GLFWwindow* window)
         cameraPos += glm::vec3(offset, 0.0f, 0.0f);
 
     glm::vec3 front;
-    float angle = 0.1f;
+    float angle = 1.0f; //0.1f;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
         pitch += angle;
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
@@ -339,9 +378,9 @@ glm::mat4 rotate(
     model = glm::rotate(model, angle, axis);
 
     glm::vec3 newPosition;
-    newPosition.x = rotationPoint.x - R * cos(angle);
+    newPosition.x = rotationPoint.x - R * cos(angle * deltaTime);
     newPosition.y = rotationPoint.y;
-    newPosition.z = rotationPoint.z - R * sin(angle);
+    newPosition.z = rotationPoint.z - R * sin(angle * deltaTime);
 
     return glm::translate(model, newPosition);
 }
