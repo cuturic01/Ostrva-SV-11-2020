@@ -45,6 +45,12 @@
     <None Include="shark.vert">
       <Filter>Source Files\Shader Files</Filter>
     </None>
+    <None Include="shader.vert">
+      <Filter>Source Files\Shader Files</Filter>
+    </None>
+    <None Include="shader.frag">
+      <Filter>Source Files\Shader Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="model.hpp">

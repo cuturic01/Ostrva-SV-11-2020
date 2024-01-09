@@ -1,0 +1,48 @@
+#version 330 core
+out vec4 FragColor;
+
+in vec3 chNormal;  
+in vec3 chFragPos;  
+in vec2 chUV;
+  
+uniform vec3 uLightPos; 
+uniform vec3 uViewPos; 
+uniform vec3 uLightColor;
+
+uniform sampler2D uDiffMap1;
+
+uniform int fragType; 
+
+void main()
+{    
+
+    float ambientStrength = 0.1;
+    vec3 ambient = ambientStrength * uLightColor;
+  	
+    // diffuse 
+    vec3 norm = normalize(chNormal);
+    vec3 lightDir = normalize(uLightPos - chFragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * uLightColor;
+    
+    // specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(uViewPos - chFragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * uLightColor;  
+
+    if (fragType == 0) // ocean = 0
+        FragColor = texture(uDiffMap1, chUV) * vec4(ambient + diffuse + specular, 1.0);
+    else if (fragType == 1) // clouds = 1
+        FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    else if (fragType == 2) // island = 2
+        FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+    else if (fragType == 3) // fire = 3
+        FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    else if (fragType == 4) // palm tree = 4
+        FragColor = texture(uDiffMap1, chUV) * vec4(ambient + diffuse + specular, 1.0);
+    else if (fragType == 5) // sharks = 5
+        FragColor = vec4(0.0, 0.0, 0.2, 1.0);
+
+}

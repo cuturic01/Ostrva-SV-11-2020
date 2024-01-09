@@ -87,7 +87,7 @@ int main()
 
     float aspectRatio = static_cast<float>(wHeight) / wWidth;
 
-#pragma region Objects
+    #pragma region Objects
     // Objects
 
     // Ocean
@@ -95,7 +95,7 @@ int main()
     glm::mat4 oceanModel = glm::mat4(1.0f);
     oceanModel = glm::scale(oceanModel, glm::vec3(20.0f, 1.0f, 20.0f));
 
-#pragma region Clouds
+    #pragma region Clouds
     Model cloud1("res/cloud/CloudCollection.obj");
     glm::mat4 cloud1Model = glm::mat4(1.0f);
     cloud1Model = glm::scale(cloud1Model, glm::vec3(0.2f, 0.2f, 0.2f));
@@ -103,7 +103,7 @@ int main()
     cloud1Model = glm::rotate(cloud1Model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 #pragma endregion
 
-#pragma region Islands
+    #pragma region Islands
     // Island 1
     Model island1("res/sphere/sphere.obj");
     glm::mat4 island1Model = glm::mat4(1.0f);
@@ -125,7 +125,7 @@ int main()
     glm::vec3 island3Centre = glm::vec3(-2.0f, 0.0f, 2.0f);
 #pragma endregion
 
-#pragma region Palm tree
+    #pragma region Palm tree
     Model palmTree("res/palm/OBJ/CoconutPalm.obj");
     glm::mat4 palmTreeModel = glm::mat4(1.0f);
     palmTreeModel = glm::scale(palmTreeModel, glm::vec3(0.01f, 0.01f, 0.01f));
@@ -133,14 +133,14 @@ int main()
     palmTreeModel = glm::rotate(palmTreeModel, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));;
 #pragma endregion
 
-#pragma region Fire
+    #pragma region Fire
     Model fire("res/fire/uploads_files_2336673_Fire.obj");
     glm::mat4 fireModel = glm::mat4(1.0f);
     fireModel = glm::scale(fireModel, glm::vec3(0.1f, 0.1f, 0.1f));
     fireModel = glm::translate(fireModel, glm::vec3(1.5f, 0.0f, 0.5f));
 #pragma endregion
 
-#pragma region Sharks
+    #pragma region Sharks
     // Shark 1
     Model shark1("res/shark/SHARK.obj");
     glm::mat4 shark1Model = glm::mat4(1.0f);
@@ -168,25 +168,26 @@ int main()
 #pragma endregion
 
 
-#pragma endregion
+    #pragma endregion
 
 
-#pragma region Projection
+    #pragma region Projection
     // Projection 
     glm::mat4 currentProjection;
     glm::mat4 projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     glm::mat4 projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
     currentProjection = projectionOrtho;
-#pragma endregion
+    #pragma endregion
 
     // View
     glm::mat4 view;
 
     // shaders
-    Shader currentShader("ocean.vert", "ocean.frag");
-    Shader oceanShader("ocean.vert", "ocean.frag");
+    Shader shader("shader.vert", "shader.frag");
+
+    /*Shader oceanShader("ocean.vert", "ocean.frag");
     Shader islandShader("island.vert", "island.frag");
-    Shader sharkShader("shark.vert", "shark.frag");
+    Shader sharkShader("shark.vert", "shark.frag");*/
 
     // Settings
     glEnable(GL_DEPTH_TEST);
@@ -202,7 +203,7 @@ int main()
 
         processInput(window);
 
-#pragma region Projection controls
+        #pragma region Projection controls
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
         {
             cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
@@ -225,48 +226,47 @@ int main()
 
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
-        // ocean
-        useShader(oceanShader, currentProjection, view);
-        currentShader = oceanShader;
-        currentShader.setMat4("model", oceanModel);
-        ocean.Draw(currentShader);
+        useShader(shader, currentProjection, view);
 
-        // fire
-        useShader(oceanShader, currentProjection, view);
-        currentShader = oceanShader;
-        currentShader.setMat4("model", fireModel);
-        fire.Draw(currentShader);
+        #pragma region Ocean render
+        shader.setMat4("model", oceanModel);
+        shader.setInt("fragType", 0);
+        ocean.Draw(shader);
+        #pragma endregion
 
-#pragma region Render clouds
-        useShader(oceanShader, currentProjection, view);
-        currentShader = oceanShader;
-        currentShader.setMat4("model", cloud1Model);
-        cloud1.Draw(currentShader);
-#pragma endregion
+        #pragma region Clouds render
+        shader.setInt("fragType", 1);
+        shader.setMat4("model", cloud1Model);
+        cloud1.Draw(shader);
+        #pragma endregion
 
-#pragma region Render island
-        useShader(islandShader, currentProjection, view);
-        currentShader = islandShader;
-        currentShader.setMat4("model", island1Model);
-        island1.Draw(currentShader);
+        #pragma region Island render
+        shader.setInt("fragType", 2);
 
-        currentShader.setMat4("model", island2Model);
-        island2.Draw(currentShader);
+        shader.setMat4("model", island1Model);
+        island1.Draw(shader);
 
-        currentShader.setMat4("model", island3Model);
-        island3.Draw(currentShader);
-#pragma endregion
+        shader.setMat4("model", island2Model);
+        island2.Draw(shader);
 
-#pragma region Render palm tree
-        useShader(oceanShader, currentProjection, view);
-        currentShader = oceanShader;
-        currentShader.setMat4("model", palmTreeModel);
-        palmTree.Draw(oceanShader);
-#pragma endregion
+        shader.setMat4("model", island3Model);
+        island3.Draw(shader);
+        #pragma endregion
 
-#pragma region Render sharks
-        useShader(sharkShader, currentProjection, view);
-        currentShader = sharkShader;
+        #pragma region Fire render
+        shader.setInt("fragType", 3);
+        shader.setMat4("model", fireModel);
+        fire.Draw(shader);
+        #pragma endregion
+
+        #pragma region Palm tree render
+        shader.setInt("fragType", 4);
+        shader.setMat4("model", palmTreeModel);
+        palmTree.Draw(shader);
+        #pragma endregion
+
+        #pragma region Sharks render
+        shader.setInt("fragType", 5);
 
         shark1Model = rotate(
             shark1Model, 
@@ -275,8 +275,8 @@ int main()
             glm::vec3(shark1Model[3]),
             island1Centre,
             0.01f);
-        sharkShader.setMat4("model", shark1Model);
-        shark1.Draw(sharkShader);
+        shader.setMat4("model", shark1Model);
+        shark1.Draw(shader);
 
         shark2Model = rotate(
             shark2Model,
@@ -285,8 +285,8 @@ int main()
             shark2CurrentPosition,
             island2Centre,
             0.01f);
-        sharkShader.setMat4("model", shark2Model);
-        shark2.Draw(sharkShader);
+        shader.setMat4("model", shark2Model);
+        shark2.Draw(shader);
 
         shark3Model = rotate(
             shark3Model,
@@ -295,8 +295,8 @@ int main()
             shark3CurrentPosition,
             island3Centre,
             0.01f);
-        sharkShader.setMat4("model", shark3Model);
-        shark3.Draw(sharkShader);
+        shader.setMat4("model", shark3Model);
+        shark3.Draw(shader);
 #pragma endregion
 
         
