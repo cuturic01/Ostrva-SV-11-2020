@@ -35,7 +35,7 @@ void main()
     if (fragType == 0) // ocean = 0
         FragColor = texture(uDiffMap1, chUV) * vec4(ambient + diffuse + specular, 1.0);
     else if (fragType == 1) // clouds = 1
-        FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        FragColor = vec4(1.0, 1.0, 1.0, 0.5);
     else if (fragType == 2) // island = 2
         FragColor = vec4(1.0, 1.0, 0.0, 1.0);
     else if (fragType == 3) // fire = 3

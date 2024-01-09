@@ -96,12 +96,13 @@ int main()
     oceanModel = glm::scale(oceanModel, glm::vec3(20.0f, 1.0f, 20.0f));
 
     #pragma region Clouds
-    Model cloud1("res/cloud/CloudCollection.obj");
-    glm::mat4 cloud1Model = glm::mat4(1.0f);
-    cloud1Model = glm::scale(cloud1Model, glm::vec3(0.2f, 0.2f, 0.2f));
-    cloud1Model = glm::translate(cloud1Model, glm::vec3(0.0f, 15.0f, 0.0f));
-    cloud1Model = glm::rotate(cloud1Model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-#pragma endregion
+    Model clouds("res/cloud/CloudCollection.obj");
+    glm::mat4 cloudsModel = glm::mat4(1.0f);
+    cloudsModel = glm::scale(cloudsModel, glm::vec3(0.2f, 0.2f, 0.2f));
+    cloudsModel = glm::translate(cloudsModel, glm::vec3(20.0f, 15.0f, 0.0f));
+    cloudsModel = glm::rotate(cloudsModel, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    float currentCloudPos = 0.0f;
+    #pragma endregion
 
     #pragma region Islands
     // Island 1
@@ -193,6 +194,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.7, 0.7, 1.0, 1.0);
 
     while (!glfwWindowShouldClose(window))
@@ -202,7 +205,6 @@ int main()
         lastFrame = currentFrame;
 
         processInput(window);
-
         #pragma region Projection controls
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
         {
@@ -223,9 +225,7 @@ int main()
 #pragma endregion
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
         useShader(shader, currentProjection, view);
 
         #pragma region Ocean render
@@ -236,8 +236,19 @@ int main()
 
         #pragma region Clouds render
         shader.setInt("fragType", 1);
-        shader.setMat4("model", cloud1Model);
-        cloud1.Draw(shader);
+        cloudsModel = glm::translate(cloudsModel, glm::vec3(0.0f, 0.1f, 0.0f));
+        currentCloudPos += 0.1f;
+        if (currentCloudPos >= 80.0f) 
+        {
+            cloudsModel = glm::mat4(1.0f);
+            cloudsModel = glm::scale(cloudsModel, glm::vec3(0.2f, 0.2f, 0.2f));
+            cloudsModel = glm::translate(cloudsModel, glm::vec3(20.0f, 15.0f, 0.0f));
+            cloudsModel = glm::rotate(cloudsModel, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            currentCloudPos = 0.0f;
+        }
+
+        shader.setMat4("model", cloudsModel);
+        clouds.Draw(shader);
         #pragma endregion
 
         #pragma region Island render
