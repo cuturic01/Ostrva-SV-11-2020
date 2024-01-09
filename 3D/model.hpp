@@ -48,6 +48,26 @@ public:
             meshes[i].Draw(shader);
     }
 
+    glm::vec3 calculateModelCenter()
+    {
+        glm::vec3 center(0.0f);
+
+        for (const auto& mesh : meshes)
+        {
+            for (const auto& vertex : mesh.vertices)
+            {
+                center += vertex.Position;
+            }
+        }
+
+        if (meshes.size() > 0)
+        {
+            center /= static_cast<float>(meshes.size() * meshes[0].vertices.size());
+        }
+
+        return center;
+    }
+
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path)
@@ -185,6 +205,7 @@ private:
         }
         return textures;
     }
+
 };
 
 

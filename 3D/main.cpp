@@ -48,7 +48,7 @@ float lastFrame = 0.0f;
 
 int main()
 {
-
+#pragma region Setup
     if (!glfwInit())
     {
         std::cout << "GLFW Biblioteka se nije ucitala! :(\n";
@@ -84,7 +84,9 @@ int main()
         std::cout << "GLEW nije mogao da se ucita! :'(\n";
         return 3;
     }
+#pragma endregion
 
+#pragma region Objects
     // Objects
 
     // Ocean
@@ -92,11 +94,12 @@ int main()
     glm::mat4 oceanModel = glm::mat4(1.0f);
     oceanModel = glm::scale(oceanModel, glm::vec3(20.0f, 1.0f, 20.0f));
 
+#pragma region Islands
     // Island 1
     Model island1("res/sphere/sphere.obj");
     glm::mat4 island1Model = glm::mat4(1.0f);
     island1Model = glm::scale(island1Model, glm::vec3(0.5f, 0.3f, 0.5f));
-    glm::vec3 island1Centre = glm::vec3(0.0f, 0.0f, 0.f);
+    glm::vec3 island1Centre = island1.calculateModelCenter(); //glm::vec3(0.0f, 0.0f, 0.f);
 
     // Island 2
     Model island2("res/sphere/sphere.obj");
@@ -109,20 +112,28 @@ int main()
     glm::mat4 island3Model = glm::mat4(1.0f);
     island3Model = glm::scale(island3Model, glm::vec3(0.3f, 0.2f, 0.3f));
     island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 8.0f));
+#pragma endregion
 
+#pragma region Sharks
     // Shark 1
     Model shark1("res/shark/SHARK.obj");
     glm::mat4 shark1Model = glm::mat4(1.0f);
     shark1Model = glm::scale(shark1Model, glm::vec3(0.3f, 0.3f, 0.3f));
     shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.4f, 3.0f));
-    //shark1Model = glm::rotate(shark1Model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 shark1CurrentPosition = glm::vec3(0.0f, -0.4f, 3.0f);
+    shark1Model = glm::rotate(shark1Model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::vec3 shark1CurrentPosition = shark1.calculateModelCenter();
+#pragma endregion
 
+#pragma endregion
+
+
+#pragma region Projection
     // Projection 
     glm::mat4 currentProjection;
     glm::mat4 projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     glm::mat4 projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
     currentProjection = projectionOrtho;
+#pragma endregion
 
     // View
     glm::mat4 view = glm::lookAt(cameraPos, cameraFront, cameraUp);
@@ -178,6 +189,7 @@ int main()
         currentShader.setMat4("model", oceanModel);
         ocean.Draw(currentShader);
 
+#pragma region Render island
         // islands
         useShader(islandShader, currentProjection, view);
         currentShader = islandShader;
@@ -189,19 +201,22 @@ int main()
 
         currentShader.setMat4("model", island3Model);
         island3.Draw(currentShader);
+#pragma endregion
 
+#pragma region Render sharks
         // sharks
         useShader(sharkShader, currentProjection, view);
         currentShader = sharkShader;
         shark1Model = rotate(
             shark1Model, 
-            glm::radians(-0.1f), 
+            glm::radians(0.1f), 
             glm::vec3(0.0f, 1.0f, 0.0f), 
             shark1CurrentPosition,
             island1Centre,
             0.01f);
         sharkShader.setMat4("model", shark1Model);
         shark1.Draw(sharkShader);
+#pragma endregion
 
         
         glfwSwapBuffers(window);
@@ -322,12 +337,11 @@ glm::mat4 rotate(
 {
     model = glm::translate(model, -rotationPoint);
     model = glm::rotate(model, angle, axis);
-    model = glm::translate(model, rotationPoint);
 
     glm::vec3 newPosition;
-    newPosition.x = rotationPoint.x + R * cos(angle);
+    newPosition.x = rotationPoint.x - R * cos(angle);
     newPosition.y = rotationPoint.y;
-    newPosition.z = rotationPoint.z + R * sin(angle);
+    newPosition.z = rotationPoint.z - R * sin(angle);
 
     return glm::translate(model, newPosition);
 }
