@@ -31,20 +31,19 @@ glm::mat4 rotate(
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view);
 
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
+glm::vec3 cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-bool firstMouse = true;
-float yaw = -90.0f;	
-float pitch = 0.0f;
+float yaw = 195.0f;
+float pitch = -57.0f;
 
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+bool firstMouse = true;
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
-
-// timing
-float deltaTime = 0.0f;	// time between current frame and last frame
-float lastFrame = 0.0f;
 
 int main()
 {
@@ -86,8 +85,26 @@ int main()
     }
 #pragma endregion
 
+    float aspectRatio = static_cast<float>(wHeight) / wWidth;
+
 #pragma region Objects
     // Objects
+
+#pragma region Sun and Moon
+    Model sun("res/sphere/sphere.obj");
+    glm::mat4 sunModel = glm::mat4(1.0f);
+    sunModel = glm::translate(sunModel, glm::vec3(0.0f, 7.0f, 10.0f));
+    glm::mat4 sunModelOrtho = glm::scale(sunModel, glm::vec3(aspectRatio, 1.0f, 1.0f));
+    glm::mat4 sunModelPerspective = glm::scale(sunModel, glm::vec3(1.0f, 1.0f, 1.0f));
+    sunModel = sunModelOrtho;
+
+    /*Model moon("res/sphere/sphere.obj");
+    glm::mat4 moonModel = glm::mat4(1.0f);
+    moonModel = glm::translate(moonModel, glm::vec3(0.0f, -7.0f, -0.0f));
+    glm::mat4 moonModelOrtho = glm::scale(moonModel, glm::vec3(aspectRatio, 1.0f, 1.0f));
+    glm::mat4 moonModelPerspective = glm::scale(moonModel, glm::vec3(1.0f, 1.0f, 1.0f));
+    moonModel = moonModelOrtho;*/
+#pragma
 
     // Ocean
     Model ocean("res/Ocean/Ocean.obj");
@@ -143,6 +160,7 @@ int main()
 
 #pragma endregion
 
+
 #pragma endregion
 
 
@@ -155,7 +173,7 @@ int main()
 #pragma endregion
 
     // View
-    glm::mat4 view = glm::lookAt(cameraPos, cameraFront, cameraUp);
+    glm::mat4 view; //= glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
     // shaders
     Shader currentShader("ocean.vert", "ocean.frag");
@@ -171,7 +189,6 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -181,26 +198,60 @@ int main()
         // Projection controls
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
         {
-            cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-            cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-            cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-            yaw = -90.0f;
-            pitch = 0.0f;
+            cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
+            //cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
+            //cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+            yaw = 210.0f;
+            pitch = -45.0f;
+
             currentProjection = projectionPerspective;
+            sunModel = sunModelPerspective;
+            //moonModel = sunModelPerspective;            
         }
         if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
         {
-            cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-            cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-            cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-            yaw = -90.0f;
-            pitch = 0.0f;
+            cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
+            /*cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
+            cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
+            yaw = 195.0f;
+            pitch = -57.0f;
+
             currentProjection = projectionOrtho;
+            sunModel = sunModelOrtho;
+            //moonModel = moonModelOrtho;
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+#pragma region Render sun and Moon
+        useShader(islandShader, currentProjection, view);
+
+        sunModel = rotate(
+            sunModel,
+            glm::radians(0.1f),
+            glm::vec3(1.0f, 0.0f, 0.0f),
+            glm::vec3(sunModel[3]),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            0.01f
+        );
+        islandShader.setMat4("model", sunModel);
+        sun.Draw(islandShader);
+
+        //useShader(oceanShader, currentProjection, view);
+
+        /*moonModel = rotate(
+            moonModel,
+            glm::radians(0.1f),
+            glm::vec3(1.0f, 0.0f, 0.0f),
+            glm::vec3(moonModel[3]),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            0.01f
+        );
+        oceanShader.setMat4("model", moonModel);
+        moon.Draw(oceanShader);*/
+#pragma endregion
 
         // ocean
         useShader(oceanShader, currentProjection, view);
@@ -305,7 +356,6 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         yaw -= angle;
     fixPitch();
-    //fixYaw();
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -378,9 +428,17 @@ glm::mat4 rotate(
     model = glm::rotate(model, angle, axis);
 
     glm::vec3 newPosition;
-    newPosition.x = rotationPoint.x - R * cos(angle * deltaTime);
-    newPosition.y = rotationPoint.y;
-    newPosition.z = rotationPoint.z - R * sin(angle * deltaTime);
+    if (axis.y != 0) 
+    {
+        newPosition.x = rotationPoint.x - R * cos(angle * deltaTime);
+        newPosition.y = rotationPoint.y;
+        newPosition.z = rotationPoint.z - R * sin(angle * deltaTime);
+    }
+    else {
+        newPosition.x = rotationPoint.x;
+        newPosition.y = rotationPoint.y + R * sin(angle * deltaTime);
+        newPosition.z = rotationPoint.z + R * cos(angle * deltaTime);
+    }
 
     return glm::translate(model, newPosition);
 }
