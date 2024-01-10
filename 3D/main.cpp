@@ -59,6 +59,23 @@ glm::vec3 dirLightIntensityEnd = glm::vec3(0.5);
 glm::vec3 lerpedDirLightIntensity;
 #pragma endregion
 
+#pragma region Point light parametars
+glm::vec3 firePos = glm::vec3();
+
+glm::vec3 softRed = glm::vec3(1.0, 0.4, 0.4);
+glm::vec3 softOrange = glm::vec3(1.0, 0.6, 0.4);
+glm::vec3 fireColor = softRed;
+
+glm::vec3 fireIntensityStart = glm::vec3(0.7, 0.7, 0.7);
+glm::vec3 fireIntensityEnd = glm::vec3(0.4, 0.4, 0.4);
+glm::vec3 fireIntensity = fireIntensityStart;
+
+glm::vec3 fireScaleStart = glm::vec3(1.0, 1.0, 1.0);
+glm::vec3 fireScaleEnd = glm::vec3(0.8, 0.8, 0.8);
+glm::vec3 fireScale = fireScaleStart;
+glm::mat4 oreginalFireModel;
+#pragma endregion
+
 int main()
 {
 #pragma region Setup
@@ -107,13 +124,13 @@ int main()
     // Ocean
     Model ocean("res/Ocean/Ocean.obj");
     glm::mat4 oceanModel = glm::mat4(1.0f);
-    oceanModel = glm::scale(oceanModel, glm::vec3(20.0f, 1.0f, 20.0f));
+    oceanModel = glm::scale(oceanModel, glm::vec3(15.0f, 1.0f, 15.0f));
 
     #pragma region Clouds
     Model clouds("res/cloud/CloudCollection.obj");
     glm::mat4 cloudsModel = glm::mat4(1.0f);
     cloudsModel = glm::scale(cloudsModel, glm::vec3(0.2f, 0.2f, 0.2f));
-    cloudsModel = glm::translate(cloudsModel, glm::vec3(20.0f, 15.0f, 0.0f));
+    cloudsModel = glm::translate(cloudsModel, glm::vec3(50.0f, 15.0f, 0.0f));
     cloudsModel = glm::rotate(cloudsModel, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     float currentCloudPos = 0.0f;
     #pragma endregion
@@ -153,7 +170,9 @@ int main()
     glm::mat4 fireModel = glm::mat4(1.0f);
     fireModel = glm::scale(fireModel, glm::vec3(0.1f, 0.1f, 0.1f));
     fireModel = glm::translate(fireModel, glm::vec3(1.5f, 0.0f, 0.5f));
-#pragma endregion
+    firePos = glm::vec3(0.3f, 0.7f, 0.0f);
+    oreginalFireModel = fireModel;
+    #pragma endregion
 
     #pragma region Sharks
     // Shark 1
@@ -241,16 +260,17 @@ int main()
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         useShader(shader, currentProjection, view);
 
+        float time = glfwGetTime();
+
         #pragma region Light render
         
         #pragma region Directional light render
-        float time = glfwGetTime();
+        float t = (sin(time / 2) + 1.0f) / 2.0f;
+        
         float dirLightPosX = sin(time) * 5.0f;
         float dirLightPosY = cos(time) * 5.0f;
         float dirLightPosZ = 0.0f;
 
-        float t = (sin(time / 2) + 1.0f) / 2.0f;
-        
         lerpedDirLightColor = mix(softYellow, softGrey, t);
         lerpedBackroundColor = mix(lightBlue, darkBlue, t);
         lerpedDirLightIntensity = mix(dirLightIntensityStart, dirLightIntensityEnd, t);
@@ -261,6 +281,10 @@ int main()
         glClearColor(lerpedBackroundColor.x, lerpedBackroundColor.y, lerpedBackroundColor.z, 1.0);
         #pragma endregion
 
+        #pragma region Point light render
+        fireColor = mix(softRed, softOrange, sin(2*time));
+        fireIntensity = mix(fireIntensityStart, fireIntensityEnd, sin(2*time));
+        #pragma endregion
 
         #pragma endregion
 
@@ -302,6 +326,11 @@ int main()
 
         #pragma region Fire render
         shader.setInt("fragType", 3);
+
+        fireScale = mix(fireScaleStart, fireScaleEnd, sin(2 * time));
+        fireModel = glm::scale(oreginalFireModel, fireScale);
+        fireModel = glm::translate(fireModel, glm::vec3(1.3f, 0.0f, 0.5f));
+
         shader.setMat4("model", fireModel);
         fire.Draw(shader);
         #pragma endregion
@@ -314,6 +343,9 @@ int main()
 
         #pragma region Sharks render
         shader.setInt("fragType", 5);
+        shader.setInt("material.diffuse", 0);
+        shader.setInt("material.specular", 1);
+        shader.setFloat("material.shininess", 32.0f);
 
         shark1Model = rotate(
             shark1Model, 
@@ -464,9 +496,23 @@ void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
     shader.setVec3("dirLight.direction", 0.0f, 5.0f, 0.0f);
     shader.setVec3("dirLight.color", softYellow);
     shader.setVec3("dirLight.intensity", dirLightIntensityStart);
+
     shader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);
     shader.setVec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
     shader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
+
+    // point light properties
+    shader.setVec3("pointLight.position", firePos);
+    shader.setVec3("pointLight.color", fireColor);
+    shader.setVec3("pointLight.intensity", fireIntensity);
+
+    shader.setVec3("pointLight.ambient", 0.07f, 0.07f, 0.07f);
+    shader.setVec3("pointLight.diffuse", 2.8f, 2.8f, 2.8f);
+    shader.setVec3("pointLight.specular", 4.0f, 4.0f, 4.0f);
+
+    shader.setFloat("pointLight.constant", 1.0f);
+    shader.setFloat("pointLight.linear", 0.09f);
+    shader.setFloat("pointLight.quadratic", 0.032f);
 }
 
 glm::mat4 rotate(
