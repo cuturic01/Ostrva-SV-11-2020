@@ -45,6 +45,20 @@ bool firstMouse = true;
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
 
+#pragma region Directional light parametars
+glm::vec3 lerpedDirLightColor;
+glm::vec3 softYellow = glm::vec3(1.0, 1.0, 0.6);
+glm::vec3 softGrey = glm::vec3(0.7529, 0.7529, 0.7529);
+
+glm::vec3 lerpedBackroundColor;
+glm::vec3 lightBlue = glm::vec3(0.7, 0.7, 1.0);
+glm::vec3 darkBlue = glm::vec3(0.1176, 0.1569, 0.2745);
+
+glm::vec3 dirLightIntensityStart = glm::vec3(1.0);
+glm::vec3 dirLightIntensityEnd = glm::vec3(0.5);
+glm::vec3 lerpedDirLightIntensity;
+#pragma endregion
+
 int main()
 {
 #pragma region Setup
@@ -186,9 +200,8 @@ int main()
     // shaders
     Shader shader("shader.vert", "shader.frag");
 
-    /*Shader oceanShader("ocean.vert", "ocean.frag");
-    Shader islandShader("island.vert", "island.frag");
-    Shader sharkShader("shark.vert", "shark.frag");*/
+    #pragma region Lights
+    #pragma endregion
 
     // Settings
     glEnable(GL_DEPTH_TEST);
@@ -227,6 +240,29 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         useShader(shader, currentProjection, view);
+
+        #pragma region Light render
+        
+        #pragma region Directional light render
+        float time = glfwGetTime();
+        float dirLightPosX = sin(time) * 5.0f;
+        float dirLightPosY = cos(time) * 5.0f;
+        float dirLightPosZ = 0.0f;
+
+        float t = (sin(time / 2) + 1.0f) / 2.0f;
+        
+        lerpedDirLightColor = mix(softYellow, softGrey, t);
+        lerpedBackroundColor = mix(lightBlue, darkBlue, t);
+        lerpedDirLightIntensity = mix(dirLightIntensityStart, dirLightIntensityEnd, t);
+
+        shader.setVec3("dirLight.direction", dirLightPosX, dirLightPosY, dirLightPosZ);
+        shader.setVec3("dirLight.color", lerpedDirLightColor);
+        shader.setVec3("dirLight.intensity", lerpedDirLightIntensity);
+        glClearColor(lerpedBackroundColor.x, lerpedBackroundColor.y, lerpedBackroundColor.z, 1.0);
+        #pragma endregion
+
+
+        #pragma endregion
 
         #pragma region Ocean render
         shader.setMat4("model", oceanModel);
@@ -310,6 +346,7 @@ int main()
         shark3.Draw(shader);
 #pragma endregion
 
+        
         
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -410,12 +447,26 @@ void fixPitch()
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
 {
     shader.use();
+
+    // vertex shader
     shader.setMat4("projection", projection);
     shader.setMat4("view", view);
 
-    shader.setVec3("uLightPos", 0, 1, 3);
-    shader.setVec3("uViewPos", 0, 0, 5);
-    shader.setVec3("uLightColor", 1, 1, 1);
+    // material properties
+    shader.setInt("material.diffuse", 0);
+    shader.setInt("material.specular", 1);
+    shader.setFloat("material.shininess", 32.0f);
+
+    // camera position
+    shader.setVec3("viewPos", cameraPos);
+
+    // directional light properties
+    shader.setVec3("dirLight.direction", 0.0f, 5.0f, 0.0f);
+    shader.setVec3("dirLight.color", softYellow);
+    shader.setVec3("dirLight.intensity", dirLightIntensityStart);
+    shader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);
+    shader.setVec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
+    shader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 }
 
 glm::mat4 rotate(
