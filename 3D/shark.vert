@@ -15,6 +15,8 @@ uniform float time;
 uniform float rotationSpeed;
 uniform vec3 rotationPoint;
 
+uniform float waterLevel;
+
 void main()
 {
     mat4 scaledModel = model * mat4(vec4(0.3, 0.0, 0.0, 0.0),
@@ -38,7 +40,12 @@ void main()
                                 vec4(0.0, 0.0, 1.0, 0),
                                 vec4(rotationPoint.x, rotationPoint.y, rotationPoint.z, 1.0));
 
-    mat4 finalModel = translationBack * rotationMatrix * translationToOrigin * scaledModel;
+    mat4 translateWaterLevel = mat4(vec4(1.0, 0.0, 0.0, 0),
+                                    vec4(0.0, 1.0, 0.0, 0.0),
+                                    vec4(0.0, 0.0, 1.0, 0),
+                                    vec4(0.0, waterLevel*5, 0.0, 1.0));
+
+    mat4 finalModel = translateWaterLevel * translationBack * rotationMatrix * translationToOrigin * scaledModel;
 
 
 

@@ -114,7 +114,9 @@ int main()
     #pragma region Ocean
     Model ocean("res/Ocean/Ocean.obj");
     glm::mat4 oceanModel = glm::mat4(1.0f);
-    oceanModel = glm::scale(oceanModel, glm::vec3(15.0f, 1.0f, 15.0f));
+    oceanModel = glm::scale(oceanModel, glm::vec3(15.0f, 3.0f, 15.0f));
+    glm::mat4 oreginalOceanModel = oceanModel;
+    //oceanModel = glm::translate(oceanModel, glm::vec3(0.0f, -0.007f, 0.0f));
     #pragma endregion
 
     #pragma region Clouds
@@ -169,18 +171,18 @@ int main()
     // Shark 1
     Model shark1("res/shark/SHARK.obj");
     glm::mat4 shark1Model = glm::mat4(1.0f);
-    shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.14f, 0.3f));
+    shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.1f, 0.3f));
     glm::vec3 shark1CurrentPosition = glm::vec3(shark1Model[3]); //glm::vec3(island2Model[3]) / island2Model[0][0];
 
     // Shark 2
     Model shark2("res/shark/SHARK.obj");
     glm::mat4 shark2Model = glm::mat4(1.0f);
-    shark2Model = glm::translate(shark2Model, glm::vec3(-2.0f, -0.14f, 2.0f));
+    shark2Model = glm::translate(shark2Model, glm::vec3(-2.0f, -0.1f, 2.0f));
 
     // Shark 3
     Model shark3("res/shark/SHARK.obj");
     glm::mat4 shark3Model = glm::mat4(1.0f);
-    shark3Model = glm::translate(shark3Model, glm::vec3(2.0f, -0.14f, 4.0f));
+    shark3Model = glm::translate(shark3Model, glm::vec3(2.0f, -0.2f, 4.0f));
     #pragma endregion
 
     #pragma endregion
@@ -259,6 +261,8 @@ int main()
         #pragma endregion
 
         #pragma region Ocean render
+        glm::vec3 waterLevel = mix(glm::vec3(0.0, -0.007, 0.0), glm::vec3(0.0, 0.007, 0.0), sin(1.5 * currentTime));
+        oceanModel = glm::translate(oreginalOceanModel, waterLevel);
         shader.setMat4("model", oceanModel);
         shader.setInt("fragType", 0);
         ocean.Draw(shader);
@@ -315,12 +319,14 @@ int main()
         useShader(sharkShader, currentProjection, view);
         sharkShader.setFloat("time", currentTime);
         sharkShader.setFloat("rotationSpeed", 1.0f);
+        
 
         sharkShader.setInt("fragType", 5);
         sharkShader.setInt("material.diffuse", 0);
         sharkShader.setInt("material.specular", 1);
         sharkShader.setFloat("material.shininess", 32.0f);
 
+        sharkShader.setFloat("waterLevel", waterLevel.y);
         sharkShader.setMat4("model", shark1Model);
         sharkShader.setVec3("rotationPoint", island1Centre);
 
