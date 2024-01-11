@@ -116,7 +116,6 @@ int main()
     glm::mat4 oceanModel = glm::mat4(1.0f);
     oceanModel = glm::scale(oceanModel, glm::vec3(15.0f, 3.0f, 15.0f));
     glm::mat4 oreginalOceanModel = oceanModel;
-    //oceanModel = glm::translate(oceanModel, glm::vec3(0.0f, -0.007f, 0.0f));
     #pragma endregion
 
     #pragma region Clouds
@@ -130,23 +129,24 @@ int main()
 
     #pragma region Islands
     // Island 1
-    Model island1("res/sphere/sphere.obj");
+    Model island1("res/Island/island.obj");
     glm::mat4 island1Model = glm::mat4(1.0f);
-    island1Model = glm::scale(island1Model, glm::vec3(0.5f, 0.3f, 0.5f));
+    island1Model = glm::scale(island1Model, glm::vec3(1.5f, 0.8f, 1.5f));
+    island1Model = glm::translate(island1Model, glm::vec3(0.0f, -0.7f, 0.0f));
     glm::vec3 island1Centre = glm::vec3(0.0, 0.0, 0.0);
 
     // Island 2
-    Model island2("res/sphere/sphere.obj");
+    Model island2("res/Island/island.obj");
     glm::mat4 island2Model = glm::mat4(1.0f);
-    island2Model = glm::scale(island2Model, glm::vec3(0.4f, 0.2f, 0.4f));
-    island2Model = glm::translate(island2Model, glm::vec3(5.0f, 0.0f, 10.0f));
+    island2Model = glm::scale(island2Model, glm::vec3(1.0f, 0.5f, 1.0f));
+    island2Model = glm::translate(island2Model, glm::vec3(2.0f, -0.7f, 4.0f));
     glm::vec3 island2Centre = glm::vec3(-2.0f, 0.0f, 2.0f);
 
     // Island 3
-    Model island3("res/sphere/sphere.obj");
+    Model island3("res/Island/island.obj");
     glm::mat4 island3Model = glm::mat4(1.0f);
-    island3Model = glm::scale(island3Model, glm::vec3(0.3f, 0.2f, 0.3f));
-    island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 7.0f));
+    island3Model = glm::scale(island3Model, glm::vec3(0.8f, 0.4f, 0.8f));
+    island3Model = glm::translate(island3Model, glm::vec3(-2.5f, 0.0f, 2.5f));
     glm::vec3 island3Centre = glm::vec3(2.0f, 0.0f, 4.0f);
     #pragma endregion
 
@@ -322,9 +322,9 @@ int main()
         
 
         sharkShader.setInt("fragType", 5);
-        sharkShader.setInt("material.diffuse", 0);
+        /*sharkShader.setInt("material.diffuse", 0);
         sharkShader.setInt("material.specular", 1);
-        sharkShader.setFloat("material.shininess", 32.0f);
+        sharkShader.setFloat("material.shininess", 32.0f);*/
 
         sharkShader.setFloat("waterLevel", waterLevel.y);
         sharkShader.setMat4("model", shark1Model);
@@ -444,8 +444,8 @@ void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
     // spotlight properties
     shader.setVec3("spotLight.position", spotlightPos);
     shader.setVec3("spotLight.direction", spotlightDir);
-    shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(20.0f)));  // Adjust as needed
-    shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(25.0f)));  // Adjust as needed
+    shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(20.0f)));
+    shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(25.0f)));
     shader.setVec3("spotLight.color", purple);
 
     shader.setFloat("spotLight.constant", 1.0f);

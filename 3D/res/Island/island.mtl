@@ -1,0 +1,10 @@
+newmtl SphereMaterial
+Ka 0.8 0.8 0.8       # Ambient color (light gray)
+Kd 0 0 0             # Diffuse color (black, will be modulated by the texture)
+Ks 0.1 0.1 0.1       # Specular color (dark gray)
+Ns 0.8              # Specular exponent (controls shininess)
+Tr 1.0               # Transparency (fully opaque)
+illum 2              # Diffuse reflection only
+map_Kd sand_diffuse.jpg
+map_Ks sand_specular.jpg
+# map_Bump sand_bump.jpg

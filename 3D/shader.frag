@@ -77,7 +77,7 @@ void main()
     else if (fragType == 1) // clouds = 1
         FragColor = vec4(1.0, 1.0, 1.0, 0.5);
     else if (fragType == 2) // island = 2
-        FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+        FragColor = vec4(result, 1.0);
     else if (fragType == 3) // fire = 3
         FragColor = vec4(pointLight.color * pointLight.intensity, 1.0);
     else if (fragType == 4) // palm tree = 4
