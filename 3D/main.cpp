@@ -42,8 +42,8 @@ glm::vec3 cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
 glm::vec3 cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-float yaw = 195.0f;
-float pitch = -57.0f;
+float yaw = 225.0f;
+float pitch = -35.0f;
 #pragma endregion
 
 #pragma region Directional light properties
@@ -64,7 +64,7 @@ glm::vec3 lerpedDirLightIntensity;
 glm::vec3 firePos = glm::vec3();
 
 glm::vec3 softRed = glm::vec3(1.0, 0.4, 0.4);
-glm::vec3 softOrange = glm::vec3(1.0, 0.6, 0.4);
+glm::vec3 softOrange = glm::vec3(1.0, 0.6, 0.2);
 glm::vec3 fireColor = softRed;
 
 glm::vec3 fireIntensityStart = glm::vec3(0.7, 0.7, 0.7);
@@ -83,7 +83,7 @@ glm::vec3 spotlightDir = glm::vec3(-0.0, 0.0, -0.01);
 glm::vec3 purple = glm::vec3(0.7, 0.0, 1.0);
 #pragma endregion
 
-#pragma region Movement properties
+#pragma region Speed properties
 float waterLevelChangeSpeed = 1.5f;
 float waterLevelChangeSpeedStep = 0.5f;
 
@@ -192,8 +192,8 @@ int main()
     Model fire("res/fire/uploads_files_2336673_Fire.obj");
     glm::mat4 fireModel = glm::mat4(1.0f);
     fireModel = glm::scale(fireModel, glm::vec3(0.1f, 0.1f, 0.1f));
-    fireModel = glm::translate(fireModel, glm::vec3(1.5f, 0.0f, 0.5f));
-    firePos = glm::vec3(0.3f, 0.7f, 0.0f);
+    fireModel = glm::translate(fireModel, glm::vec3(1.5f, 1.2f, 0.5f));
+    firePos = glm::vec3(0.6f, 1.2f, -0.15f);
     oreginalFireModel = fireModel;
     #pragma endregion
 
@@ -238,6 +238,7 @@ int main()
     glClearColor(0.7, 0.7, 1.0, 1.0);
     #pragma endregion
 
+    #pragma region Signature
     float signatureVertices[] = {
      0.7, -0.7,      0.0, 1.0, // top-left
      0.7, -1.0,      0.0, 0.0, // bottom-left
@@ -269,7 +270,6 @@ int main()
 
     glBindVertexArray(0);
 
-    //unsigned int signatureShader = createShader("signature.vert", "signature.frag");
     unsigned signatureTexture = loadImageToTexture("res/Signature/signature.png");
     glBindTexture(GL_TEXTURE_2D, signatureTexture);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -278,11 +278,8 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
-    //glUseProgram(signatureShader);
-    //unsigned uTexLoc = glGetUniformLocation(signatureShader, "uTex");
-    //glUniform1i(uTexLoc, 0);
     signatureShader.setInt("uTex", 0);
-    //glUseProgram(0);
+    #pragma endregion
 
     while (!glfwWindowShouldClose(window))
     {
@@ -401,6 +398,7 @@ int main()
         shark3.Draw(sharkShader);
         #pragma endregion
 
+        #pragma region Signature render
         signatureShader.use();
         glBindVertexArray(signatureVAO);
         glActiveTexture(GL_TEXTURE0);
@@ -409,6 +407,7 @@ int main()
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindVertexArray(0);
+        #pragma endregion
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -420,7 +419,7 @@ int main()
 
 void processInput(GLFWwindow* window)
 {
-
+    #pragma region General controls
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -436,7 +435,9 @@ void processInput(GLFWwindow* window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    #pragma endregion
 
+    #pragma region Projection controls
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
     {
         cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
@@ -448,13 +449,15 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
     {
         cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
-        yaw = 195.0f;
-        pitch = -57.0f;
+        yaw = 225.0f;
+        pitch = -35.0f;
 
         currentProjection = projectionOrtho;
     }
+    #pragma endregion
 
-    float offset = 0.05f; //0.005f;
+    #pragma region Camera movement controls
+    float offset = 0.005f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += glm::vec3(0.0f, offset, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -463,9 +466,11 @@ void processInput(GLFWwindow* window)
         cameraPos -= glm::vec3(offset, 0.0f, 0.0f);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::vec3(offset, 0.0f, 0.0f);
+    #pragma endregion
 
+    #pragma region Camera rotation controls
     glm::vec3 front;
-    float angle = 1.0f; //0.1f;
+    float angle = 0.1f;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
         pitch += angle;
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
@@ -484,13 +489,16 @@ void processInput(GLFWwindow* window)
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(front);
+    #pragma endregion
 
+    #pragma region Speed controls
     if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS)
         speedUpScene();
     if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS)
         slowDownScene();
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
         resetScene();
+    #pragma endregion
 }
 
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
