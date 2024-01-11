@@ -20,7 +20,22 @@
 void processInput(GLFWwindow* window);
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view);
 
+void speedUpScene();
+void slowDownScene();
+void resetScene();
+
 float currentTime = 0.0f;
+float timeDelta = 0.0f;
+float currentMovementInputTime = 0.0f;
+float lastMovementInputTime = 0.0f;
+
+
+#pragma region Projection and view properties
+glm::mat4 currentProjection;
+glm::mat4 projectionPerspective;
+glm::mat4 projectionOrtho;
+glm::mat4 view;
+#pragma endregion
 
 #pragma region Camera properties
 glm::vec3 cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
@@ -31,7 +46,7 @@ float yaw = 195.0f;
 float pitch = -57.0f;
 #pragma endregion
 
-#pragma region Directional light parametars
+#pragma region Directional light properties
 glm::vec3 lerpedDirLightColor;
 glm::vec3 softYellow = glm::vec3(1.0, 1.0, 0.6);
 glm::vec3 softGrey = glm::vec3(0.7529, 0.7529, 0.7529);
@@ -45,7 +60,7 @@ glm::vec3 dirLightIntensityEnd = glm::vec3(0.5);
 glm::vec3 lerpedDirLightIntensity;
 #pragma endregion
 
-#pragma region Point light parametars
+#pragma region Point light properties
 glm::vec3 firePos = glm::vec3();
 
 glm::vec3 softRed = glm::vec3(1.0, 0.4, 0.4);
@@ -62,10 +77,27 @@ glm::vec3 fireScale = fireScaleStart;
 glm::mat4 oreginalFireModel;
 #pragma endregion
 
-#pragma region Spotlight parametars
+#pragma region Spotlight properties
 glm::vec3 spotlightPos = glm::vec3(0.0, 1.0, -0.2);
 glm::vec3 spotlightDir = glm::vec3(-0.0, 0.0, -0.01);
 glm::vec3 purple = glm::vec3(0.7, 0.0, 1.0);
+#pragma endregion
+
+#pragma region Movement properties
+float waterLevelChangeSpeed = 1.5f;
+float waterLevelChangeSpeedStep = 0.5f;
+
+float sunMoonRotationSpeed = 1.0f;
+float sunMoonRotationSpeedStep = 0.333f;
+
+float cloudsMovementSpeed = 0.1f;
+float cloudsMovementSpeedStep = 0.033f;
+
+float sharkMovementSpeed = 1.0f;
+float sharkMovementSpeedStep = 0.333f;
+
+float flameGrowthSpeed = 2.0f;
+float flameGrowthSpeedStep = 0.677f;
 #pragma endregion
 
 int main()
@@ -106,8 +138,6 @@ int main()
         return 3;
     }
     #pragma endregion
-
-    float aspectRatio = static_cast<float>(wHeight) / wWidth;
 
     #pragma region Objects
 
@@ -188,19 +218,16 @@ int main()
     #pragma endregion
 
     #pragma region Projection
-    glm::mat4 currentProjection;
-    glm::mat4 projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-    glm::mat4 projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
+    projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
+    projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
     currentProjection = projectionOrtho;
     #pragma endregion
 
-    // View
-    glm::mat4 view;
-
-    // shaders
+    #pragma region Shaders
     Shader shader("shader.vert", "shader.frag");
     Shader sharkShader("shark.vert", "shader.frag");
-
+    #pragma endregion
+    
     #pragma region Settings
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_BACK);
@@ -212,26 +239,10 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        currentTime = glfwGetTime();
+        float lastTime = glfwGetTime();
+        //timeDelta = abs(currentTime - lastTime);
+        currentTime = lastTime;
         processInput(window);
-        #pragma region Projection controls
-        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
-        {
-            cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
-            yaw = 210.0f;
-            pitch = -45.0f;
-
-            currentProjection = projectionPerspective;     
-        }
-        if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-        {
-            cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
-            yaw = 195.0f;
-            pitch = -57.0f;
-
-            currentProjection = projectionOrtho;
-        }
-#pragma endregion
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -241,8 +252,8 @@ int main()
 
         float t = (sin(currentTime / 2) + 1.0f) / 2.0f;
         
-        float dirLightPosX = sin(currentTime) * 5.0f;
-        float dirLightPosY = cos(currentTime) * 5.0f;
+        float dirLightPosX = sin(currentTime * sunMoonRotationSpeed);
+        float dirLightPosY = cos(currentTime * sunMoonRotationSpeed);
         float dirLightPosZ = 0.0f;
 
         lerpedDirLightColor = mix(softYellow, softGrey, t);
@@ -256,12 +267,20 @@ int main()
         #pragma endregion
 
         #pragma region Point light render
-        fireColor = mix(softRed, softOrange, sin(2* currentTime));
+        fireColor = mix(softRed, softOrange, sin(currentTime * flameGrowthSpeed));
         fireIntensity = mix(fireIntensityStart, fireIntensityEnd, sin(2* currentTime));
         #pragma endregion
 
+        #pragma region Spot light render
+        float spotlightRadius = 10;
+        spotlightDir = glm::vec3(-sin(currentTime * sharkMovementSpeed) * spotlightRadius, 
+                                 -5.0, 
+                                 cos(currentTime * sharkMovementSpeed) * spotlightRadius);
+        shader.setVec3("spotLight.direction", spotlightDir);
+        #pragma endregion
+
         #pragma region Ocean render
-        glm::vec3 waterLevel = mix(glm::vec3(0.0, -0.007, 0.0), glm::vec3(0.0, 0.007, 0.0), sin(1.5 * currentTime));
+        glm::vec3 waterLevel = mix(glm::vec3(0.0, -0.007, 0.0), glm::vec3(0.0, 0.007, 0.0), sin(waterLevelChangeSpeed * currentTime));
         oceanModel = glm::translate(oreginalOceanModel, waterLevel);
         shader.setMat4("model", oceanModel);
         shader.setInt("fragType", 0);
@@ -270,7 +289,7 @@ int main()
 
         #pragma region Clouds render
         shader.setInt("fragType", 1);
-        cloudsModel = glm::translate(cloudsModel, glm::vec3(0.0f, 0.1f, 0.0f));
+        cloudsModel = glm::translate(cloudsModel, glm::vec3(0.0f, cloudsMovementSpeed, 0.0f));
         currentCloudPos += 0.1f;
         if (currentCloudPos >= 80.0f) 
         {
@@ -318,28 +337,21 @@ int main()
         #pragma region Sharks render
         useShader(sharkShader, currentProjection, view);
         sharkShader.setFloat("time", currentTime);
-        sharkShader.setFloat("rotationSpeed", 1.0f);
-        
-
-        sharkShader.setInt("fragType", 5);
-        /*sharkShader.setInt("material.diffuse", 0);
-        sharkShader.setInt("material.specular", 1);
-        sharkShader.setFloat("material.shininess", 32.0f);*/
-
+        sharkShader.setFloat("rotationSpeed", sharkMovementSpeed);
         sharkShader.setFloat("waterLevel", waterLevel.y);
+        sharkShader.setInt("fragType", 5);
+
+        // shark1
         sharkShader.setMat4("model", shark1Model);
         sharkShader.setVec3("rotationPoint", island1Centre);
-
-        float spotlightRadius = 10;
-        spotlightDir = glm::vec3(-sin(currentTime * 1.0) * spotlightRadius, -5.0, cos(currentTime * 1.0) * spotlightRadius);
-        sharkShader.setVec3("spotLight.direction", spotlightDir);
-
         shark1.Draw(sharkShader);
 
+        // shark2
         sharkShader.setMat4("model", shark2Model);
         sharkShader.setVec3("rotationPoint", island2Centre);
         shark2.Draw(sharkShader);
 
+        // shark3
         sharkShader.setMat4("model", shark3Model);
         sharkShader.setVec3("rotationPoint", island3Centre);
         shark3.Draw(sharkShader);
@@ -355,6 +367,7 @@ int main()
 
 void processInput(GLFWwindow* window)
 {
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -370,6 +383,23 @@ void processInput(GLFWwindow* window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+    {
+        cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
+        yaw = 210.0f;
+        pitch = -45.0f;
+
+        currentProjection = projectionPerspective;
+    }
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+    {
+        cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
+        yaw = 195.0f;
+        pitch = -57.0f;
+
+        currentProjection = projectionOrtho;
+    }
 
     float offset = 0.05f; //0.005f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -401,6 +431,13 @@ void processInput(GLFWwindow* window)
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(front);
+
+    if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS)
+        speedUpScene();
+    if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS)
+        slowDownScene();
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        resetScene();
 }
 
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
@@ -455,5 +492,57 @@ void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
     shader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
     shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
     shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+}
+
+void speedUpScene()
+{
+    lastMovementInputTime = glfwGetTime();
+    timeDelta = abs(currentMovementInputTime - lastMovementInputTime);
+    currentMovementInputTime = lastMovementInputTime;
+
+    if (timeDelta < 0.02f)
+        return;
+    if (waterLevelChangeSpeed + waterLevelChangeSpeedStep >= 3.0)
+        return;
+
+    waterLevelChangeSpeed += waterLevelChangeSpeedStep;
+    sunMoonRotationSpeed += sunMoonRotationSpeedStep;
+    cloudsMovementSpeed += cloudsMovementSpeedStep;
+    sharkMovementSpeed += sharkMovementSpeedStep;
+    flameGrowthSpeed += flameGrowthSpeedStep;
+}
+
+void slowDownScene()
+{
+    lastMovementInputTime = glfwGetTime();
+    timeDelta = abs(currentMovementInputTime - lastMovementInputTime);
+    currentMovementInputTime = lastMovementInputTime;
+
+    if (timeDelta < 0.02f)
+        return;
+    if (waterLevelChangeSpeed - waterLevelChangeSpeedStep <= 0.0)
+        return;
+
+    waterLevelChangeSpeed -= waterLevelChangeSpeedStep;
+    sunMoonRotationSpeed -= sunMoonRotationSpeedStep;
+    cloudsMovementSpeed -= cloudsMovementSpeedStep;
+    sharkMovementSpeed -= sharkMovementSpeedStep;
+    flameGrowthSpeed -= flameGrowthSpeedStep;
+}
+
+void resetScene()
+{
+    lastMovementInputTime = glfwGetTime();
+    timeDelta = abs(currentMovementInputTime - lastMovementInputTime);
+    currentMovementInputTime = lastMovementInputTime;
+
+    if (timeDelta < 0.02f)
+        return;
+
+    waterLevelChangeSpeed = 1.5f;
+    sunMoonRotationSpeed = 1.0f;
+    cloudsMovementSpeed = 0.1f;
+    sharkMovementSpeed = 1.0f;
+    flameGrowthSpeed = 2.0f;
 }
 
