@@ -1,6 +1,3 @@
-//Opis: Primjer ucitavanja modela upotrebom ASSIMP biblioteke
-//Preuzeto sa learnOpenGL
-
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
@@ -24,11 +21,14 @@ void speedUpScene();
 void slowDownScene();
 void resetScene();
 
+static unsigned loadImageToTexture(const char* filePath);
+
+#pragma region Time properties
 float currentTime = 0.0f;
 float timeDelta = 0.0f;
 float currentMovementInputTime = 0.0f;
 float lastMovementInputTime = 0.0f;
-
+#pragma endregion
 
 #pragma region Projection and view properties
 glm::mat4 currentProjection;
@@ -226,6 +226,7 @@ int main()
     #pragma region Shaders
     Shader shader("shader.vert", "shader.frag");
     Shader sharkShader("shark.vert", "shader.frag");
+    Shader signatureShader("signature.vert", "signature.frag");
     #pragma endregion
     
     #pragma region Settings
@@ -237,13 +238,56 @@ int main()
     glClearColor(0.7, 0.7, 1.0, 1.0);
     #pragma endregion
 
+    float signatureVertices[] = {
+     0.7, -0.7,      0.0, 1.0, // top-left
+     0.7, -1.0,      0.0, 0.0, // bottom-left
+     1.0,  -0.7,     1.0, 1.0,  // top-right
+     1.0, -1.0,      1.0, 0.0, // bottom-right
+    };
+
+    unsigned int signatureIndecies[] = {
+        0, 1, 3,
+        3, 2, 0
+    };
+    unsigned int signatureVAO, signatureVBO, signatureEBO;
+    glGenVertexArrays(1, &signatureVAO);
+    glGenBuffers(1, &signatureVBO);
+    glGenBuffers(1, &signatureEBO);
+
+    glBindVertexArray(signatureVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, signatureVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(signatureVertices), signatureVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, signatureEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(signatureIndecies), signatureIndecies, GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+
+    //unsigned int signatureShader = createShader("signature.vert", "signature.frag");
+    unsigned signatureTexture = loadImageToTexture("res/Signature/signature.png");
+    glBindTexture(GL_TEXTURE_2D, signatureTexture);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    //glUseProgram(signatureShader);
+    //unsigned uTexLoc = glGetUniformLocation(signatureShader, "uTex");
+    //glUniform1i(uTexLoc, 0);
+    signatureShader.setInt("uTex", 0);
+    //glUseProgram(0);
+
     while (!glfwWindowShouldClose(window))
     {
-        float lastTime = glfwGetTime();
-        //timeDelta = abs(currentTime - lastTime);
-        currentTime = lastTime;
+        currentTime = glfwGetTime();
         processInput(window);
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         useShader(shader, currentProjection, view);
@@ -356,6 +400,15 @@ int main()
         sharkShader.setVec3("rotationPoint", island3Centre);
         shark3.Draw(sharkShader);
         #pragma endregion
+
+        signatureShader.use();
+        glBindVertexArray(signatureVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, signatureTexture);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(0 * sizeof(unsigned int)));
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -544,5 +597,41 @@ void resetScene()
     cloudsMovementSpeed = 0.1f;
     sharkMovementSpeed = 1.0f;
     flameGrowthSpeed = 2.0f;
+}
+
+static unsigned loadImageToTexture(const char* filePath) {
+    int TextureWidth;
+    int TextureHeight;
+    int TextureChannels;
+    unsigned char* ImageData = stbi_load(filePath, &TextureWidth, &TextureHeight, &TextureChannels, 0);
+    if (ImageData != NULL)
+    {
+        //Slike se osnovno ucitavaju naopako pa se moraju ispraviti da budu uspravne
+        stbi__vertical_flip(ImageData, TextureWidth, TextureHeight, TextureChannels);
+
+        // Provjerava koji je format boja ucitane slike
+        GLint InternalFormat = -1;
+        switch (TextureChannels) {
+        case 1: InternalFormat = GL_RED; break;
+        case 3: InternalFormat = GL_RGB; break;
+        case 4: InternalFormat = GL_RGBA; break;
+        default: InternalFormat = GL_RGB; break;
+        }
+
+        unsigned int Texture;
+        glGenTextures(1, &Texture);
+        glBindTexture(GL_TEXTURE_2D, Texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, TextureWidth, TextureHeight, 0, InternalFormat, GL_UNSIGNED_BYTE, ImageData);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        // oslobadjanje memorije zauzete sa stbi_load posto vise nije potrebna
+        stbi_image_free(ImageData);
+        return Texture;
+    }
+    else
+    {
+        std::cout << "Textura nije ucitana! Putanja texture: " << filePath << std::endl;
+        stbi_image_free(ImageData);
+        return 0;
+    }
 }
 
