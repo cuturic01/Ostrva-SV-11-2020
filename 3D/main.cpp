@@ -42,8 +42,8 @@ glm::vec3 cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
 glm::vec3 cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-float yaw = 225.0f;
-float pitch = -35.0f;
+float yaw = 215;//-215.0f;
+float pitch = -40.0f;
 #pragma endregion
 
 #pragma region Directional light properties
@@ -193,7 +193,7 @@ int main()
     glm::mat4 fireModel = glm::mat4(1.0f);
     fireModel = glm::scale(fireModel, glm::vec3(0.1f, 0.1f, 0.1f));
     fireModel = glm::translate(fireModel, glm::vec3(1.5f, 1.2f, 0.5f));
-    firePos = glm::vec3(0.6f, 1.2f, -0.2f);
+    firePos = glm::vec3(0.4f, 1.2f, 0.2f);
     oreginalFireModel = fireModel;
     #pragma endregion
 
@@ -219,7 +219,7 @@ int main()
 
     #pragma region Projection
     projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
-    projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
+    projectionOrtho = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, 0.05f, 500.0f);
     currentProjection = projectionOrtho;
     #pragma endregion
 
@@ -449,8 +449,8 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
     {
         cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
-        yaw = 225.0f;
-        pitch = -35.0f;
+        yaw = 215.0f;
+        pitch = -40.0f;
 
         currentProjection = projectionOrtho;
     }
