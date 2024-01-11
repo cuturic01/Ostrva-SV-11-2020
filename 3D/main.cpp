@@ -176,7 +176,7 @@ int main()
     Model island3("res/Island/island.obj");
     glm::mat4 island3Model = glm::mat4(1.0f);
     island3Model = glm::scale(island3Model, glm::vec3(0.8f, 0.4f, 0.8f));
-    island3Model = glm::translate(island3Model, glm::vec3(-2.5f, 0.0f, 2.5f));
+    island3Model = glm::translate(island3Model, glm::vec3(-2.5f, -0.7f, 2.5f));
     glm::vec3 island3Centre = glm::vec3(2.0f, 0.0f, 4.0f);
     #pragma endregion
 
@@ -193,7 +193,7 @@ int main()
     glm::mat4 fireModel = glm::mat4(1.0f);
     fireModel = glm::scale(fireModel, glm::vec3(0.1f, 0.1f, 0.1f));
     fireModel = glm::translate(fireModel, glm::vec3(1.5f, 1.2f, 0.5f));
-    firePos = glm::vec3(0.6f, 1.2f, -0.15f);
+    firePos = glm::vec3(0.6f, 1.2f, -0.2f);
     oreginalFireModel = fireModel;
     #pragma endregion
 
@@ -361,7 +361,7 @@ int main()
         #pragma region Fire render
         shader.setInt("fragType", 3);
 
-        fireScale = mix(fireScaleStart, fireScaleEnd, sin(2 * currentTime));
+        fireScale = mix(fireScaleStart, fireScaleEnd, sin(flameGrowthSpeed * currentTime));
         fireModel = glm::scale(oreginalFireModel, fireScale);
         fireModel = glm::translate(fireModel, glm::vec3(1.3f, 0.0f, 0.5f));
 
