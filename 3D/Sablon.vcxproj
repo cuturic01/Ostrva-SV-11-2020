@@ -146,14 +146,9 @@
     <ClCompile Include="shader.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ocean.frag" />
-    <None Include="ocean.vert" />
-    <None Include="island.frag" />
-    <None Include="island.vert" />
     <None Include="packages.config" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
-    <None Include="shark.frag" />
     <None Include="shark.vert" />
   </ItemGroup>
   <ItemGroup>

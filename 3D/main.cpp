@@ -17,33 +17,19 @@
 #include "shader.hpp"
 #include "model.hpp"
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
-void fixPitch();
-glm::mat4 rotate(
-    glm::mat4 model, 
-    float angle, 
-    glm::vec3 axis, 
-    glm::vec3 currentPosition,
-    glm::vec3 rotationPoint,
-    float R);
-
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view);
 
+float currentTime = 0.0f;
 
+#pragma region Camera properties
 glm::vec3 cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
 glm::vec3 cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 float yaw = 195.0f;
 float pitch = -57.0f;
-
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
-bool firstMouse = true;
-float lastX = 800.0f / 2.0;
-float lastY = 600.0 / 2.0;
+#pragma endregion
 
 #pragma region Directional light parametars
 glm::vec3 lerpedDirLightColor;
@@ -76,9 +62,15 @@ glm::vec3 fireScale = fireScaleStart;
 glm::mat4 oreginalFireModel;
 #pragma endregion
 
+#pragma region Spotlight parametars
+glm::vec3 spotlightPos = glm::vec3(0.0, 1.0, -0.2);
+glm::vec3 spotlightDir = glm::vec3(-0.0, 0.0, -0.01);
+glm::vec3 purple = glm::vec3(0.7, 0.0, 1.0);
+#pragma endregion
+
 int main()
 {
-#pragma region Setup
+    #pragma region Setup
     if (!glfwInit())
     {
         std::cout << "GLFW Biblioteka se nije ucitala! :(\n";
@@ -105,7 +97,6 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glViewport(0, 0, wWidth, wHeight);
-    //glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
@@ -114,17 +105,17 @@ int main()
         std::cout << "GLEW nije mogao da se ucita! :'(\n";
         return 3;
     }
-#pragma endregion
+    #pragma endregion
 
     float aspectRatio = static_cast<float>(wHeight) / wWidth;
 
     #pragma region Objects
-    // Objects
 
-    // Ocean
+    #pragma region Ocean
     Model ocean("res/Ocean/Ocean.obj");
     glm::mat4 oceanModel = glm::mat4(1.0f);
     oceanModel = glm::scale(oceanModel, glm::vec3(15.0f, 1.0f, 15.0f));
+    #pragma endregion
 
     #pragma region Clouds
     Model clouds("res/cloud/CloudCollection.obj");
@@ -140,30 +131,30 @@ int main()
     Model island1("res/sphere/sphere.obj");
     glm::mat4 island1Model = glm::mat4(1.0f);
     island1Model = glm::scale(island1Model, glm::vec3(0.5f, 0.3f, 0.5f));
-    glm::vec3 island1Centre = glm::vec3(island1Model[3]);
+    glm::vec3 island1Centre = glm::vec3(0.0, 0.0, 0.0);
 
     // Island 2
     Model island2("res/sphere/sphere.obj");
     glm::mat4 island2Model = glm::mat4(1.0f);
     island2Model = glm::scale(island2Model, glm::vec3(0.4f, 0.2f, 0.4f));
     island2Model = glm::translate(island2Model, glm::vec3(5.0f, 0.0f, 10.0f));
-    glm::vec3 island2Centre = glm::vec3(0.0f, 0.0f, 3.0f); //glm::vec3(island2Model[3]) / island2Model[0][0];
+    glm::vec3 island2Centre = glm::vec3(-2.0f, 0.0f, 2.0f);
 
     // Island 3
     Model island3("res/sphere/sphere.obj");
     glm::mat4 island3Model = glm::mat4(1.0f);
     island3Model = glm::scale(island3Model, glm::vec3(0.3f, 0.2f, 0.3f));
     island3Model = glm::translate(island3Model, glm::vec3(-7.0f, 0.0f, 7.0f));
-    glm::vec3 island3Centre = glm::vec3(-2.0f, 0.0f, 2.0f);
-#pragma endregion
+    glm::vec3 island3Centre = glm::vec3(2.0f, 0.0f, 4.0f);
+    #pragma endregion
 
     #pragma region Palm tree
     Model palmTree("res/palm/OBJ/CoconutPalm.obj");
     glm::mat4 palmTreeModel = glm::mat4(1.0f);
     palmTreeModel = glm::scale(palmTreeModel, glm::vec3(0.01f, 0.01f, 0.01f));
     palmTreeModel = glm::translate(palmTreeModel, glm::vec3(-5.0f, 0.0f, 7.0f));
-    palmTreeModel = glm::rotate(palmTreeModel, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));;
-#pragma endregion
+    palmTreeModel = glm::rotate(palmTreeModel, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    #pragma endregion
 
     #pragma region Fire
     Model fire("res/fire/uploads_files_2336673_Fire.obj");
@@ -178,35 +169,23 @@ int main()
     // Shark 1
     Model shark1("res/shark/SHARK.obj");
     glm::mat4 shark1Model = glm::mat4(1.0f);
-    shark1Model = glm::scale(shark1Model, glm::vec3(0.3f, 0.3f, 0.3f));
-    shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.4f, 3.0f));
-    shark1Model = glm::rotate(shark1Model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 shark1CurrentPosition = glm::vec3(shark1Model[3]);
+    shark1Model = glm::translate(shark1Model, glm::vec3(0.0f, -0.14f, 0.3f));
+    glm::vec3 shark1CurrentPosition = glm::vec3(shark1Model[3]); //glm::vec3(island2Model[3]) / island2Model[0][0];
 
     // Shark 2
     Model shark2("res/shark/SHARK.obj");
     glm::mat4 shark2Model = glm::mat4(1.0f);
-    shark2Model = glm::scale(shark2Model, glm::vec3(0.3f, 0.3f, 0.3f));
-    shark2Model = glm::translate(shark2Model, glm::vec3(5.0f, -0.5f, 15.0f));
-    shark2Model = glm::rotate(shark2Model, glm::radians(120.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 shark2CurrentPosition = glm::vec3(shark2Model[3]);
+    shark2Model = glm::translate(shark2Model, glm::vec3(-2.0f, -0.14f, 2.0f));
 
     // Shark 3
     Model shark3("res/shark/SHARK.obj");
     glm::mat4 shark3Model = glm::mat4(1.0f);
-    shark3Model = glm::scale(shark3Model, glm::vec3(0.3f, 0.3f, 0.3f));
-    shark3Model = glm::translate(shark3Model, glm::vec3(-9.0f, -0.5f, 10.0f));
-    shark3Model = glm::rotate(shark3Model, glm::radians(140.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 shark3CurrentPosition = glm::vec3(shark3Model[3]);
-
-#pragma endregion
-
+    shark3Model = glm::translate(shark3Model, glm::vec3(2.0f, -0.14f, 4.0f));
+    #pragma endregion
 
     #pragma endregion
 
-
     #pragma region Projection
-    // Projection 
     glm::mat4 currentProjection;
     glm::mat4 projectionPerspective = glm::perspective(glm::radians(45.0f), (float)wWidth / (float)wHeight, 0.1f, 100.0f);
     glm::mat4 projectionOrtho = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
@@ -218,24 +197,20 @@ int main()
 
     // shaders
     Shader shader("shader.vert", "shader.frag");
+    Shader sharkShader("shark.vert", "shader.frag");
 
-    #pragma region Lights
-    #pragma endregion
-
-    // Settings
+    #pragma region Settings
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.7, 0.7, 1.0, 1.0);
+    #pragma endregion
 
     while (!glfwWindowShouldClose(window))
     {
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
+        currentTime = glfwGetTime();
         processInput(window);
         #pragma region Projection controls
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
@@ -259,16 +234,13 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         useShader(shader, currentProjection, view);
-
-        float time = glfwGetTime();
-
-        #pragma region Light render
         
         #pragma region Directional light render
-        float t = (sin(time / 2) + 1.0f) / 2.0f;
+
+        float t = (sin(currentTime / 2) + 1.0f) / 2.0f;
         
-        float dirLightPosX = sin(time) * 5.0f;
-        float dirLightPosY = cos(time) * 5.0f;
+        float dirLightPosX = sin(currentTime) * 5.0f;
+        float dirLightPosY = cos(currentTime) * 5.0f;
         float dirLightPosZ = 0.0f;
 
         lerpedDirLightColor = mix(softYellow, softGrey, t);
@@ -282,10 +254,8 @@ int main()
         #pragma endregion
 
         #pragma region Point light render
-        fireColor = mix(softRed, softOrange, sin(2*time));
-        fireIntensity = mix(fireIntensityStart, fireIntensityEnd, sin(2*time));
-        #pragma endregion
-
+        fireColor = mix(softRed, softOrange, sin(2* currentTime));
+        fireIntensity = mix(fireIntensityStart, fireIntensityEnd, sin(2* currentTime));
         #pragma endregion
 
         #pragma region Ocean render
@@ -327,7 +297,7 @@ int main()
         #pragma region Fire render
         shader.setInt("fragType", 3);
 
-        fireScale = mix(fireScaleStart, fireScaleEnd, sin(2 * time));
+        fireScale = mix(fireScaleStart, fireScaleEnd, sin(2 * currentTime));
         fireModel = glm::scale(oreginalFireModel, fireScale);
         fireModel = glm::translate(fireModel, glm::vec3(1.3f, 0.0f, 0.5f));
 
@@ -342,44 +312,33 @@ int main()
         #pragma endregion
 
         #pragma region Sharks render
-        shader.setInt("fragType", 5);
-        shader.setInt("material.diffuse", 0);
-        shader.setInt("material.specular", 1);
-        shader.setFloat("material.shininess", 32.0f);
+        useShader(sharkShader, currentProjection, view);
+        sharkShader.setFloat("time", currentTime);
+        sharkShader.setFloat("rotationSpeed", 1.0f);
 
-        shark1Model = rotate(
-            shark1Model, 
-            glm::radians(0.1f), 
-            glm::vec3(0.0f, 1.0f, 0.0f), 
-            glm::vec3(shark1Model[3]),
-            island1Centre,
-            0.01f);
-        shader.setMat4("model", shark1Model);
-        shark1.Draw(shader);
+        sharkShader.setInt("fragType", 5);
+        sharkShader.setInt("material.diffuse", 0);
+        sharkShader.setInt("material.specular", 1);
+        sharkShader.setFloat("material.shininess", 32.0f);
 
-        shark2Model = rotate(
-            shark2Model,
-            glm::radians(0.1f),
-            glm::vec3(0.0f, 1.0f, 0.0f),
-            shark2CurrentPosition,
-            island2Centre,
-            0.01f);
-        shader.setMat4("model", shark2Model);
-        shark2.Draw(shader);
+        sharkShader.setMat4("model", shark1Model);
+        sharkShader.setVec3("rotationPoint", island1Centre);
 
-        shark3Model = rotate(
-            shark3Model,
-            glm::radians(0.1f),
-            glm::vec3(0.0f, 1.0f, 0.0f),
-            shark3CurrentPosition,
-            island3Centre,
-            0.01f);
-        shader.setMat4("model", shark3Model);
-        shark3.Draw(shader);
-#pragma endregion
+        float spotlightRadius = 10;
+        spotlightDir = glm::vec3(-sin(currentTime * 1.0) * spotlightRadius, -5.0, cos(currentTime * 1.0) * spotlightRadius);
+        sharkShader.setVec3("spotLight.direction", spotlightDir);
 
-        
-        
+        shark1.Draw(sharkShader);
+
+        sharkShader.setMat4("model", shark2Model);
+        sharkShader.setVec3("rotationPoint", island2Centre);
+        shark2.Draw(sharkShader);
+
+        sharkShader.setMat4("model", shark3Model);
+        sharkShader.setVec3("rotationPoint", island3Centre);
+        shark3.Draw(sharkShader);
+        #pragma endregion
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -426,54 +385,16 @@ void processInput(GLFWwindow* window)
         yaw += angle;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         yaw -= angle;
-    fixPitch();
+
+    if (pitch >= 89.0f)
+        pitch = 89.0f;
+    if (pitch <= -89.0f)
+        pitch = -89.0f;
+
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(front);
-}
-
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
-
-    if (firstMouse)
-    {
-        lastX = cameraFront.x;
-        lastY = cameraFront.y;
-        firstMouse = false;
-        return;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-    lastX = xpos;
-    lastY = ypos;
-
-    float sensitivity = 0.1f; // change this value to your liking
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    yaw += xoffset;
-    pitch += yoffset;
-
-    // make sure that when pitch is out of bounds, screen doesn't get flipped
-    fixPitch();
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front.y = sin(glm::radians(pitch));
-    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(front);
-}
-
-void fixPitch()
-{
-    if (pitch >= 90.0f)
-        pitch = 90.0f;
-    if (pitch <= -90.0f)
-        pitch = -90.0f;
 }
 
 void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
@@ -513,32 +434,20 @@ void useShader(Shader shader, glm::mat4 projection, glm::mat4 view)
     shader.setFloat("pointLight.constant", 1.0f);
     shader.setFloat("pointLight.linear", 0.09f);
     shader.setFloat("pointLight.quadratic", 0.032f);
-}
 
-glm::mat4 rotate(
-    glm::mat4 model, 
-    float angle, 
-    glm::vec3 axis, 
-    glm::vec3 currentPosition,
-    glm::vec3 rotationPoint,
-    float R)
-{
-    model = glm::translate(model, -rotationPoint);
-    model = glm::rotate(model, angle, axis);
+    // spotlight properties
+    shader.setVec3("spotLight.position", spotlightPos);
+    shader.setVec3("spotLight.direction", spotlightDir);
+    shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(20.0f)));  // Adjust as needed
+    shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(25.0f)));  // Adjust as needed
+    shader.setVec3("spotLight.color", purple);
 
-    glm::vec3 newPosition;
-    if (axis.y != 0) 
-    {
-        newPosition.x = rotationPoint.x - R * cos(angle * deltaTime);
-        newPosition.y = rotationPoint.y;
-        newPosition.z = rotationPoint.z - R * sin(angle * deltaTime);
-    }
-    else {
-        newPosition.x = rotationPoint.x;
-        newPosition.y = rotationPoint.y + R * sin(angle * deltaTime);
-        newPosition.z = rotationPoint.z + R * cos(angle * deltaTime);
-    }
+    shader.setFloat("spotLight.constant", 1.0f);
+    shader.setFloat("spotLight.linear", 0.09f);
+    shader.setFloat("spotLight.quadratic", 0.032f);
 
-    return glm::translate(model, newPosition);
+    shader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+    shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+    shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
 }
 
