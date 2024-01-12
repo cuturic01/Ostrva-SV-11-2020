@@ -181,7 +181,7 @@ int main()
     #pragma endregion
 
     #pragma region Palm tree
-    Model palmTree("res/palm/OBJ/CoconutPalm.obj");
+    Model palmTree("res/palm/CoconutPalm.obj");
     glm::mat4 palmTreeModel = glm::mat4(1.0f);
     palmTreeModel = glm::scale(palmTreeModel, glm::vec3(0.01f, 0.01f, 0.01f));
     palmTreeModel = glm::translate(palmTreeModel, glm::vec3(-5.0f, 0.0f, 7.0f));
