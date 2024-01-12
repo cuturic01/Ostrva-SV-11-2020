@@ -42,7 +42,7 @@ glm::vec3 cameraPos = glm::vec3(5.0f, 5.0f, 5.0f);
 glm::vec3 cameraFront = glm::vec3(-5.0f, -5.0f, -5.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-float yaw = 215;//-215.0f;
+float yaw = 215.0f;//-215.0f;
 float pitch = -40.0f;
 #pragma endregion
 
